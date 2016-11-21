@@ -43,17 +43,17 @@ void setup() {
     Serial.begin(38400);
 
     // initialize device
-    //Serial.println("Initializing I2C devices...");
+    Serial.println("Initializing I2C devices...");
     accelgyro.initialize();
 
     // verify connection
-    //Serial.println("Testing device connections...");
-    //Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    Serial.println("Testing device connections...");
+    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
     // use the code below to change accel/gyro offset values
 
 
-    //Serial.println("Updating internal sensor offsets...");
+    Serial.println("Updating internal sensor offsets...");
     caribrate();
 
     // configure Arduino LED for
@@ -110,8 +110,8 @@ void calculateAcceleration () {
     #ifdef OUTPUT_READABLE_ACCELGYRO
         // display tab-separated accel/gyro x/y/z values
         //Serial.print("a/g:\t");
-        Serial.println(fax); //Serial.print("\t");
+        //Serial.println(fax); //Serial.print("\t");
         Serial.println(fay); //Serial.print("\t");
-        Serial.println(faz); //Serial.print("\t");
+        //Serial.println(faz); //Serial.print("\t");
     #endif
 }

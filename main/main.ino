@@ -1,7 +1,16 @@
 #include "accelFirmware.h"
 
-int16_t *ax, *ay, *az;
-int16_t *axOff, *ayOff, *azOff;
+uint16_t ax;
+uint16_t ay;
+uint16_t az;
+
+float axOff;
+float ayOff; 
+float azOff;
+
+float fax;
+float fay;
+float faz;
 
 void setup () {
     // initialize serial communication
@@ -10,22 +19,19 @@ void setup () {
     Serial.begin(38400);
 
     initAccel();
-    Serial.println("caribating");
-    getOffset (axOff, ayOff, azOff);
+    getOffset (&axOff, &ayOff, &azOff);
 }
 
 void loop () {
-    getAccel(ax, ay, az);
+    getAccel(&ax, &ay, &az);
 
-    static float fax;
-    static float fay;
-    static float faz;
+    fax = (ax / SENSITIVITY - axOff);
+    fay = (ay / SENSITIVITY - ayOff);
+    faz = (az / SENSITIVITY - azOff - 1);
 
-    fax = (*ax - *axOff) / SENSITIVITY;
-    fay = (*ay - *ayOff) / SENSITIVITY;
-    faz = (*az - *azOff - SENSITIVITY) / SENSITIVITY;
+    Serial.println(fax); Serial.print("\t");
+    //Serial.println(ay); Serial.print("\t");
+    //Serial.println(faz);
 
-    Serial.print(fax); Serial.print("\t");
-    Serial.print(fay); Serial.print("\t");
-    Serial.println(faz);
+    delay(100);
 }

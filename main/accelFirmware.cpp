@@ -17,7 +17,8 @@
 // AD0 low = 0x68 (default for InvenSense evaluation board)
 // AD0 high = 0x69
 //MPU6050 accelgyro(0x69); // <-- use for AD0 high
-static MPU6050 accelgyro;
+
+MPU6050 accelgyro;
 
 void initAccel () {
     // join I2C bus (I2Cdev library doesn't do this automatically)
@@ -30,16 +31,24 @@ void initAccel () {
     accelgyro.initialize();
 }
 
-void getOffset (uint16_t *axOff, uint16_t *ayOff, uint16_t *azOff) {
+void getOffset (float *axOff, float *ayOff, float *azOff) {
     uint8_t count = 0;
-    uint16_t ax, ay, az;
 
+    uint16_t ax;
+    uint16_t ay;
+    uint16_t az;
+
+    Serial.println("caribating");
     while(count < 20) {
-        accelgyro.getAcceleration(ax, ay, az);
-        *axOff += ax;
-        *ayOff += ay;
-        *azOff += az;
+        Serial.println(".");
+        getAccel(&ax, &ay, &az);
+        
+        *axOff += ax / SENSITIVITY;
+        *ayOff += ay / SENSITIVITY;
+        *azOff += az / SENSITIVITY;
+        
         count++;
+        delay(500);
     }
 
     *axOff /= 20;
