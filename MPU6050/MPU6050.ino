@@ -49,8 +49,14 @@ void setup() {
     // verify connection
     Serial.println("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+<<<<<<< HEAD:MPU6050/MPU6050.ino
 
-    //Serial.println("Updating internal sensor offsets...");
+    // use the code below to change accel/gyro offset values
+
+=======
+>>>>>>> 7a6d7373a2cf6b3bdca70135c89a2d7cf63ca39b:MPU6050/MPU6050.ino
+
+    Serial.println("Updating internal sensor offsets...");
     caribrate();
 
     // configure Arduino LED for
@@ -101,7 +107,11 @@ void calculateAcceleration () {
         // display tab-separated accel/gyro x/y/z values
         //Serial.print("a/g:\t");
         //Serial.println(fax); //Serial.print("\t");
+<<<<<<< HEAD:MPU6050/MPU6050.ino
+        Serial.println(fay); //Serial.print("\t");
+=======
         Serial.println(ay); //Serial.print("\t");
+>>>>>>> 7a6d7373a2cf6b3bdca70135c89a2d7cf63ca39b:MPU6050/MPU6050.ino
         //Serial.println(faz); //Serial.print("\t");
     #endif
 

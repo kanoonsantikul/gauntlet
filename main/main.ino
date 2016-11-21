@@ -22,26 +22,24 @@ void loop () {
 
     //graph
     Serial.println(fay);
-    getMax();
-    
+    //getMax();
 }
 
-//
+
 //void getMax() {
-//    //Serial.println(yMax);      
+//    //Serial.println(yMax);
 //    //Serial.print("fay: "); Serial.println(fay);
 //    if (fay > NOISE_Y && fay > yMax) {
-//        yMax = fay; 
+//        yMax = fay;
 //    } else if (fay < -NOISE_Y && fay < yMax) {
 //        yMax = fay;
 //    } else if (fay < NOISE_Y && fay > -NOISE_Y) {
 //        if(yMax > NOISE_Y || yMax < -NOISE_Y) {
-//           //Serial.print("yMAX: "); 
-//           //Serial.println(yMax);      
+//           //Serial.print("yMAX: ");
+//           //Serial.println(yMax);
 //           delay(10);
 //        }
 //        yMax = 0;
 //        Serial.println(yMax);
 //    }
 //}
-
