@@ -49,9 +49,12 @@ void setup() {
     // verify connection
     Serial.println("Testing device connections...");
     Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+<<<<<<< HEAD:MPU6050/MPU6050.ino
 
     // use the code below to change accel/gyro offset values
 
+=======
+>>>>>>> 7a6d7373a2cf6b3bdca70135c89a2d7cf63ca39b:MPU6050/MPU6050.ino
 
     Serial.println("Updating internal sensor offsets...");
     caribrate();
@@ -69,15 +72,10 @@ void loop() {
 }
 
 void caribrate () {
-//    Serial.println("before");
-//    Serial.print(accelgyro.getXAccelOffset()); Serial.print("\t");
-//    Serial.print(accelgyro.getYAccelOffset()); Serial.print("\t");
-//    Serial.println(accelgyro.getZAccelOffset());
-
     uint8_t count = 0;
-    //Serial.print("caribrating");
+    Serial.print("caribrating");
     while(count < 20) {
-        //Serial.print(".");
+        Serial.print(".");
         accelgyro.getAcceleration(&ax, &ay, &az);
         axOff += ax;
         ayOff += ay;
@@ -88,12 +86,10 @@ void caribrate () {
     axOff /= 20;
     ayOff /= 20;
     azOff /= 20;
-//    Serial.println("\nOffset");
-//    Serial.print(axOff);
-//    Serial.print("\t");
-//    Serial.print(ayOff);
-//    Serial.print("\t");
-//    Serial.println(azOff);
+    Serial.println("\nOffset");
+    //Serial.print(axOff); Serial.print("\t");
+    //Serial.print(ayOff); Serial.print("\t");
+    //Serial.println(azOff);
 }
 
 void calculateAcceleration () {
@@ -111,7 +107,13 @@ void calculateAcceleration () {
         // display tab-separated accel/gyro x/y/z values
         //Serial.print("a/g:\t");
         //Serial.println(fax); //Serial.print("\t");
+<<<<<<< HEAD:MPU6050/MPU6050.ino
         Serial.println(fay); //Serial.print("\t");
+=======
+        Serial.println(ay); //Serial.print("\t");
+>>>>>>> 7a6d7373a2cf6b3bdca70135c89a2d7cf63ca39b:MPU6050/MPU6050.ino
         //Serial.println(faz); //Serial.print("\t");
     #endif
+
+    delay(50);
 }

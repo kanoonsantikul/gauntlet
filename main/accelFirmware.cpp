@@ -1,8 +1,6 @@
 #include <util/delay.h>
 #include "accelFirmware.h"
 
-// I2Cdev and MPU6050 must be installed as libraries, or else the .cpp/.h files
-// for both classes must be in the include path of your project
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
@@ -31,6 +29,7 @@ void initAccel () {
     accelgyro.initialize();
 }
 
+<<<<<<< HEAD
 void getOffset (float *axOff, float *ayOff, float *azOff) {
     uint8_t count = 0;
 
@@ -46,16 +45,29 @@ void getOffset (float *axOff, float *ayOff, float *azOff) {
         *axOff += ax / SENSITIVITY;
         *ayOff += ay / SENSITIVITY;
         *azOff += az / SENSITIVITY;
+=======
+void caribrate (uint16_t *axOff, uint16_t *ayOff, uint16_t *azOff) {
+    uint8_t count = 0;
+    int16_t ax, ay, az;
+    
+    Serial.print("caribrating");
+    while(count < 20) {
+        Serial.print(".");
+        getAccel(&ax, &ay, &az);
+        *axOff += ax;
+        *ayOff += ay;
+        *azOff += az;
+>>>>>>> 7a6d7373a2cf6b3bdca70135c89a2d7cf63ca39b
         
         count++;
         delay(500);
     }
-
     *axOff /= 20;
     *ayOff /= 20;
     *azOff /= 20;
 }
 
 void getAccel (uint16_t *ax, uint16_t *ay, uint16_t *az) {
-    accelgyro.getAcceleration(ax, ay, az);
+    accelgyro.getAcceleration(ax, ay, az);  
 }
+
