@@ -14,6 +14,9 @@
 int16_t ax, ay, az;
 int16_t axOff, ayOff, azOff;
 uint8_t fax, fay, faz;
+uint8_t Vx0, Vy0, Vx, Vy;
+uint32_t previousMs;
+uint32_t deltaMs;
 
 /////////////////////////////////////////////////////////////////////
 // USB report descriptor, สร้างขึ้นจาก HID Descriptor Tool ซึ่ง
@@ -165,16 +168,43 @@ PT_THREAD(mouse_task(struct pt *pt))
 
   for (;;)
   {
+    //find delta time
+    deltaMs = millis() - previousMs;
+    previousMs = millis();
+    
     getAccel(&ax, &ay, &az);
+    
+
+     //test acceleration
+//    ax = 1;
+//    ay = 1;
 
     fax = (ax - axOff) / SENSITIVITY;
     fay = (ay - ayOff) / SENSITIVITY;
     faz = (az - azOff - SENSITIVITY) / SENSITIVITY;
 
+//    if(fax < 0.5 && fax > -0.5) {
+//      fax = 0;
+//    }
+//    if(fay < 0.5 && fay > -0.5) {
+//      fay = 0;
+//    }
+
+    //find velocity
+    Vx = Vx0 + (fax * deltaMs);
+    Vy = Vy0 + (fay * deltaMs);
+
+    //set new V0
+    Vx0 = Vx;
+    Vy0 = Vy;
+
     //graph
-    Serial.println(fay);
-    
-    sendMouse(-fax, fay, 0);
+    Serial.print("ax : ");
+    Serial.print(ax);
+    Serial.print("       ay : ");
+    Serial.println(ay);e
+       
+    sendMouse(-Vx, Vy, 0);
     PT_DELAY(pt,100,ts);
   }
   
@@ -195,7 +225,17 @@ PT_THREAD(main_task(struct pt *pt))
 //////////////////////////////////////////////////////////////
 void setup()
 {
-  Serial.begin(38400);
+  previousMs = millis();
+  deltaMs = 0;
+
+  Vx0 = 0;
+  Vy0 = 0;
+
+  pinMode(PIN_PD3, OUTPUT);
+  Serial.begin(9600);
+  
+  //Serial.begin(38400);
+  
   initAccel();
   caribrate(&axOff, &ayOff, &azOff);
   
@@ -221,6 +261,11 @@ void setup()
 //////////////////////////////////////////////////////////////
 void loop()
 {
+
+ // Serial.println("Hello, Serial");
+  PORTD ^= (1<<PD3);  // ใช้ตัวดำเนินการ XOR เพื่อสลับลอจิกของขา
+  delay(5);
+  
   usbPoll();
   main_task(&main_pt);
 }
