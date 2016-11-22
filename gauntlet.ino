@@ -1,21 +1,19 @@
-#include <stddef.h>
-#include <stdbool.h>
-#include <avr/interrupt.h>
-#include <util/delay.h>
+#include <pt.h>
+#include <usbdrv.h>
+#include "keycodes.h"
 
-#include "usbdrv/usbdrv.h"
-#include "pt/pt.h"
-
-#include "timer.h"
-
-#define REPORT_ID_KEYBOARD 1
-#define REPORT_ID_MOUSE    2
-#define REPORT_ID_GAMEPAD  3
+#define REPORT_ID_MOUSE 2
 
 // มาโครสำหรับจำลองการหน่วงเวลาใน protothread
 #define PT_DELAY(pt,ms,tsVar) \
-  tsVar = timer_millis(); \
-  PT_WAIT_UNTIL(pt, timer_millis()-tsVar >= (ms));
+  tsVar = millis(); \
+  PT_WAIT_UNTIL(pt, millis()-tsVar >= (ms));
+
+#include "accelFirmware.h"
+
+int16_t ax, ay, az;
+int16_t axOff, ayOff, azOff;
+uint8_t fax, fay, faz;
 
 /////////////////////////////////////////////////////////////////////
 // USB report descriptor, สร้างขึ้นจาก HID Descriptor Tool ซึ่ง
@@ -26,7 +24,7 @@
 //
 // *** ไม่แนะนำให้สร้างเองด้วยมือ ***
 /////////////////////////////////////////////////////////////////////
-PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] =
+PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] = 
 {
   ////////////////////////////////////
   // โครงสร้าง HID report สำหรับคียบอร์ด
@@ -113,7 +111,7 @@ PROGMEM const char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
   0xc0                           // END_COLLECTION
 };
 
-typedef struct
+struct ReportMouse
 {
   /* +----\------+-----+-----+-----+-----+-----+-----+-----+-----+
    * |Byte \ Bit |  7  |  6  |  5  |  4  |  3  |  2  |  1  |  0  |
@@ -131,13 +129,15 @@ typedef struct
   uint8_t  buttons;
   int8_t   dx;
   int8_t   dy;
-} ReportMouse;
+};
 
 ReportMouse reportMouse;
 
+uint16_t light;  // Updated by Light-Task; to be shared among threads
+
 // Protothread states
 struct pt main_pt;
-struct pt reportMouse_pt;
+struct pt mouse_pt;
 
 ////////////////////////////////////////////////////////////////
 // Automatically called by usbpoll() when host makes a request
@@ -148,71 +148,80 @@ usbMsgLen_t usbFunctionSetup(uchar data[8])
 }
 
 //////////////////////////////////////////////////////////////
-void sendMouse()
+void sendMouse(int8_t dx, int8_t dy, uint8_t buttons)
 {
+  reportMouse.dx = dx;
+  reportMouse.dy = dy;
+  reportMouse.buttons = buttons;
   usbSetInterrupt((uchar*)&reportMouse, sizeof(reportMouse));
 }
 
-void setMouse(int8_t dx, int8_t dy, uint8_t buttons) {
-    reportMouse.dx = dx;
-    reportMouse.dy = dy;
-    reportMouse.buttons = buttons;
-}
-
 //////////////////////////////////////////////////////////////
-PT_THREAD(reportMouse_task(struct pt *pt))
+PT_THREAD(mouse_task(struct pt *pt))
 {
   static uint32_t ts = 0;
+
   PT_BEGIN(pt);
 
   for (;;)
   {
-      // Make mouse go bottom-left
-      PT_WAIT_UNTIL(pt,usbInterruptIsReady());
-      sendMouse();
-      PT_DELAY(pt,100,ts);
-  }
+    getAccel(&ax, &ay, &az);
 
+    fax = (ax - axOff) / SENSITIVITY;
+    fay = (ay - ayOff) / SENSITIVITY;
+    faz = (az - azOff - SENSITIVITY) / SENSITIVITY;
+
+    //graph
+    Serial.println(fay);
+    
+    sendMouse(-fax, fay, 0);
+    PT_DELAY(pt,100,ts);
+  }
+  
   PT_END(pt);
 }
+
 //////////////////////////////////////////////////////////////
 PT_THREAD(main_task(struct pt *pt))
 {
   PT_BEGIN(pt);
 
-  reportMouse_task(&reportMouse_pt);
+  PT_WAIT_UNTIL(pt,usbInterruptIsReady());
+  mouse_task(&mouse_pt);
 
   PT_END(pt);
 }
 
 //////////////////////////////////////////////////////////////
-int main()
+void setup()
 {
-    int i = 0;
-    int j = 0;
-  timer_init();
-
+  Serial.begin(38400);
+  initAccel();
+  caribrate(&axOff, &ayOff, &azOff);
+  
   // Initialize USB subsystem
   usbInit();
   usbDeviceDisconnect();
-  _delay_ms(300);
+  delay(300);
   usbDeviceConnect();
-
+  
+  //init_peripheral();
+  
   // Initialize USB reports
-
   reportMouse.report_id = REPORT_ID_MOUSE;
-  setMouse(0, 0, 0);
+  reportMouse.dx = 0;
+  reportMouse.dy = 0;
+  reportMouse.buttons = 0;
 
   // Initialize tasks
   PT_INIT(&main_pt);
-  PT_INIT(&reportMouse_pt);
-
-  sei();
-  for (;;)
-  {
-      setMouse(5, -5, 0);
-
-      usbPoll();
-      main_task(&main_pt);
-  }
+  PT_INIT(&mouse_pt);
 }
+
+//////////////////////////////////////////////////////////////
+void loop()
+{
+  usbPoll();
+  main_task(&main_pt);
+}
+
