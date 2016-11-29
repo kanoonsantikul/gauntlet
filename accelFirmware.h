@@ -1,5 +1,5 @@
-#define SENSITIVITY 16384.0
+#define SENSITIVITY 16384.0000
 
 void initAccel ();
-void getAccel (uint16_t *ax, uint16_t *ay, uint16_t *az);
-void caribrate (uint16_t *axOff, uint16_t *ayOff, uint16_t *azOff);
+void getAccel (int16_t *ax, int16_t *ay, int16_t *az);
+void caribrate (float *axOff, float *ayOff, float *azOff, uint16_t numberOffTest);

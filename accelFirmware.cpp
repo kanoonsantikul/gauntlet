@@ -25,28 +25,30 @@ void initAccel () {
         Fastwire::setup(400, true);
     #endif
     accelgyro.initialize();
+    accelgyro.setFullScaleAccelRange(MPU6050_ACCEL_FS_2);
 }
 
-void caribrate (uint16_t *axOff, uint16_t *ayOff, uint16_t *azOff) {
-    uint8_t count = 0;
+void caribrate (float *axOff, float *ayOff, float *azOff, uint16_t numberOfTest) {
     int16_t ax, ay, az;
+    uint16_t count = 0;
 
     Serial.print("caribrating");
-    while(count < 20) {
-        Serial.print(".");
+    for (count = 0; count < numberOfTest; count++) {
+        Serial.print(count / (float)numberOfTest * 100);
+        Serial.println("%");
         getAccel(&ax, &ay, &az);
         *axOff += ax;
         *ayOff += ay;
         *azOff += az;
-
-        count++;
-        delay(500);
+        
+        delay(25);
     }
-    *axOff /= 20;
-    *ayOff /= 20;
-    *azOff /= 20;
+    
+    *axOff /= numberOfTest;
+    *ayOff /= numberOfTest;
+    *azOff /= numberOfTest;
 }
 
-void getAccel (uint16_t *ax, uint16_t *ay, uint16_t *az) {
+void getAccel (int16_t *ax, int16_t *ay, int16_t *az) {
     accelgyro.getAcceleration(ax, ay, az);
 }
