@@ -13,14 +13,14 @@
 int16_t rawAx, rawAy, rawAz;
 
 float axOff, ayOff, azOff;
-float realAx, realAy, realAz;
+float Ax, Ay, Az;
+float AxMax = 0;
+float AyMax = 0;
+float zxcount = 0;
+float zycount = 0;
 
-float Vx0, Vy0, Vx, Vy;
 int8_t previousMs;
-int8_t deltaMs;
-
-uint8_t xState = 0;
-uint8_t yState = 0;
+int8_t t;
 
 static uint32_t ts = 0;
 
@@ -140,68 +140,86 @@ void sendMouse(int8_t dx, int8_t dy, uint8_t buttons) {
 }
 
 PT_THREAD(compute_task(struct pt *pt)) {
-  static float accelNoise = 0.02;
-  static float velocityNeighborRange = 0.7;
-  static uint8_t zeroCountX = 0;
-  static uint8_t zeroCountY = 0;
+  static float ZERO_NOISE = 3.5;
+  static float ACCEL_NOISE = 25;
+  static float ZERO = 35;
+  static float LOW_SPEED = 10;
+  static float HEIGHT_SPEED = 15; 
   PT_BEGIN(pt);
     for (;;) {
       //find delta time
-        deltaMs = millis() - previousMs;
+        t = millis() - previousMs;
         previousMs = millis();
       
         getAccel(&rawAx, &rawAy, &rawAz);
-  
-        realAx = ((float)rawAx - axOff) / SENSITIVITY;
-        realAy = ((float)rawAy - ayOff) / SENSITIVITY;
-        realAz = ((float)rawAz - azOff - SENSITIVITY) / SENSITIVITY;
-  
-        //find velocity
-        Vx = Vx0 + (realAx * (float)deltaMs);
-        Vy = Vy0 + (realAy * (float)deltaMs);
 
-        // set V = 0 if have noise
-        if(absolute(realAx) <= accelNoise) {
-          Vx = 0;
-        }
-        if(absolute(realAy) <= accelNoise) {
-          Vy = 0;
-        }
+        Ax = ((float)rawAx - axOff) / SENSITIVITY;
+        Ay = ((float)rawAy - ayOff) / SENSITIVITY;
+        Az = ((float)rawAz - azOff - SENSITIVITY) / SENSITIVITY;
 
-        if (Vx != 0) {
-          zeroCountX = 0;
-        } else {
-          zeroCountX++;
-        }
-        if (Vy != 0) {
-          zeroCountY = 0;
-        } else {
-          zeroCountY++;
+        Ax *= 50;
+        if (Ax <= ZERO_NOISE && Ax >= -ZERO_NOISE) {
+          Ax = 0;          
+          
+          zxcount++;
+          if(zxcount > ZERO) {
+            zxcount = 0;
+            AxMax = 0;
+          }
+        } else if (Ax <= ACCEL_NOISE && Ax >= -ACCEL_NOISE) {
+          zxcount = 0;
         }
 
-        if (zeroCountX > 10) {
-          Vx0 = 0;
+        if(AxMax == 0) {
+            if(Ax > 0) {
+              if(Ax < LOW_SPEED) {
+                Ax = LOW_SPEED;
+              } else if(Ax > HEIGHT_SPEED) {
+                Ax = HEIGHT_SPEED;
+              }
+            } else if(Ax < 0) {
+              if(Ax > -LOW_SPEED) {
+                Ax = -LOW_SPEED;
+              } else if(Ax < -HEIGHT_SPEED) {
+                Ax = -HEIGHT_SPEED;
+              }
+            }
+            AxMax = Ax;
         }
-        if (zeroCountY > 10) {
-          Vy0 = 0;
+        //////////////////////////////////////////
+        Ay *= 50;
+        if (Ay <= ZERO_NOISE && Ay >= -ZERO_NOISE) {
+          Ay = 0;          
+          
+          zycount++;
+          if(zycount > ZERO) {
+            zycount = 0;
+            AyMax = 0;
+          }
+        } else if (Ay <= ACCEL_NOISE && Ay >= -ACCEL_NOISE) {
+          zycount = 0;
         }
-        
-        //set new V0 = V in possible range
-        if(isNeighbor(Vx0, Vx, velocityNeighborRange)) {
-         Vx0 = Vx;
+
+        if(AyMax == 0) {
+            if(Ay > 0) {
+              if(Ay < LOW_SPEED) {
+                Ay = LOW_SPEED;
+              } else if(Ay > HEIGHT_SPEED) {
+                Ay = HEIGHT_SPEED;
+              }
+            } else if(Ay < 0) {
+              if(Ay > -LOW_SPEED) {
+                Ay = -LOW_SPEED;
+              } else if(Ay < -HEIGHT_SPEED) {
+                Ay = -HEIGHT_SPEED;
+              }
+            }
+            AyMax = Ay;
         }
-        if(isNeighbor(Vy0, Vy, velocityNeighborRange)) {
-         Vy0 = Vy;
-        }
-        
-        //graph
-        //Serial.print(deltaMs);
-        // Serial.print(",");
-        Serial.print((int8_t)Vx0);
+
+        Serial.print(AyMax);
         Serial.print(",");
-        Serial.println((int8_t)Vy0);
-        //Serial.print(",");
-        //Serial.println(realAz);
+        Serial.println(Ay);
   
         PT_DELAY(pt,1,ts);
     }
@@ -212,7 +230,7 @@ PT_THREAD(mouse_task(struct pt *pt)) {
   PT_BEGIN(pt); 
     for (;;) {
       PT_WAIT_UNTIL(pt,usbInterruptIsReady());
-      sendMouse((int8_t)Vx0, -(int8_t)Vy0, 0);
+      sendMouse(AxMax, -AyMax, 0);
       PT_DELAY(pt,1,ts);
     }
   PT_END(pt);
@@ -230,11 +248,8 @@ PT_THREAD(main_task(struct pt *pt)) {
 
 void setup() {
   previousMs = millis();
-  deltaMs = 0;
-
-  Vx0 = 0;
-  Vy0 = 0;
-
+  t = 0;
+  
   pinMode(PIN_PD3, OUTPUT);
   Serial.begin(115200);
    
